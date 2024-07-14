@@ -7,7 +7,7 @@ import tkinter as tk
 
 # Globals
 playing = False
-timeBetweenLoops = 1250  # 0.5 Seconds (500ms) by default
+timeBetweenLoops = 500  # 0.5 Seconds (500ms) by default
 rightClickTypeList = ["rightclick", "rclick"]
 leftClickTypeList = ["leftclick", "click", "lclick", "normalclick"]
 middleClickTypeList = ["mclick", "middleclick", "scrollclick", "scrollwheelclick", "wheelclick"]
