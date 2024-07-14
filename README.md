@@ -7,9 +7,13 @@ each command consist of 5 key variables, [Type, XPosition, YPositon, Duration, K
 commands such as Left Click does not use the last Key variable, and Key Presses don't use X or Y position.
 
 Middle Mouse Click acceptable command type names : "mclick", "middleclick", "scrollclick", "scrollwheelclick", "wheelclick"
+
 Right Mouse Click acceptable command type names : "rightclick", "rclick"
+
 Left Mouse Click acceptable command type names : "leftclick", "click", "lclick", "normalclick"
+
 Key Press acceptable command type names : "press", "presskey"
+
 Sleep acceptable command type names : "sleep", "duration", "delay"
 
 Left Mouse Click : "leftclick x=200 y=200 delay=200"
