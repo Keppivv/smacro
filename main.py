@@ -70,13 +70,10 @@ def execCommand(command):
     delay = float(command[3] / 1000)
     key = command[4]
     if typa in leftClickTypeList:
-        mousekey.MouseKey().move_to(x=x, y=y)
         mousekey.left_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
     elif typa in rightClickTypeList:
-        mousekey.MouseKey().move_to(x=x, y=y)
         mousekey.right_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
     elif typa in middleClickTypeList:
-        mousekey.MouseKey().move_to(x=x, y=y)
         mousekey.middle_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
     elif str(typa) in delayTypeList:
         time.sleep(delay)
