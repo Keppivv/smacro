@@ -1,7 +1,9 @@
 Usage
 
 each line corresponds to one command, each line can only have one command.
+
 each command consist of 5 key variables, [Type, XPosition, YPositon, Duration, Key]
+
 commands such as Left Click does not use the last Key variable, and Key Presses don't use X or Y position.
 
 Middle Mouse Click acceptable command type names : "mclick", "middleclick", "scrollclick", "scrollwheelclick", "wheelclick"
