@@ -7,7 +7,7 @@ import tkinter as tk
 
 # Globals
 playing = False
-timeBetweenLoops = 500  # 0.5 Seconds (500ms) by default
+timeBetweenLoops = 1250  # 0.5 Seconds (500ms) by default
 rightClickTypeList = ["rightclick", "rclick"]
 leftClickTypeList = ["leftclick", "click", "lclick", "normalclick"]
 middleClickTypeList = ["mclick", "middleclick", "scrollclick", "scrollwheelclick", "wheelclick"]
@@ -64,17 +64,31 @@ def StopClicking():
 
 
 def execCommand(command):
-    typa = command[0].lower()
-    x = command[1]
-    y = command[2]
+    typa = str(command[0]).lower()
+    x = int(command[1])
+    y = int(command[2])
+    tx, ty = mousekey.MouseKey().get_cursor_position()
+    isalrdhere = False
+    if tx == x:
+        if ty == y:
+            isalrdhere = True
     delay = float(command[3] / 1000)
     key = command[4]
     if typa in leftClickTypeList:
-        mousekey.left_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
+        if isalrdhere:
+            mousekey.left_click_xy(x=x, y=y, delay=delay)
+        else:
+            mousekey.left_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
     elif typa in rightClickTypeList:
-        mousekey.right_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
+        if isalrdhere:
+            mousekey.right_click_xy(x=x, y=y, delay=delay)
+        else:
+            mousekey.right_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
     elif typa in middleClickTypeList:
-        mousekey.middle_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
+        if isalrdhere:
+            mousekey.middle_click_xy(x=x, y=y, delay=delay)
+        else:
+            mousekey.middle_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
     elif str(typa) in delayTypeList:
         time.sleep(delay)
     elif str(typa) in keyTypeList:
@@ -110,7 +124,9 @@ def parseCommand(command):
             duration = str(part).removeprefix("delay=")
         if str(part).rfind("key=", 0, 4) == 0:
             key = str(part).removeprefix("key=")
-
+    if commandType is None:
+        if str(command).lower() in leftClickTypeList:
+            commandType = str(command).lower()
     return [str(commandType), int(locationX), int(locationY), float(duration), str(key)]
 
 
