@@ -1,169 +1,259 @@
 import threading
 import time
-import mousekey
-import keyboard
-import ctypes
 import tkinter as tk
+from tkinter import ttk
+import mousekey
+import pyautogui
+import keyboard
+class Normal:
 
-# Globals
-playing = False
-timeBetweenLoops = 1250  # 0.5 Seconds (500ms) by default
-rightClickTypeList = ["rightclick", "rclick"]
-leftClickTypeList = ["leftclick", "click", "lclick", "normalclick"]
-middleClickTypeList = ["mclick", "middleclick", "scrollclick", "scrollwheelclick", "wheelclick"]
-delayTypeList = ["sleep", "duration", "delay"]
-keyTypeList = ["press", "presskey"]
-isInf = False
-FPS = 30
-# Functions
-def StartClicked():
-    global playing
-    playing = True
-    startBtn.config(state="disabled")
-    stopBtn.config(state="normal")
-    grabText = macroField.get(1.0, tk.END).splitlines()
-    grabText = [line for line in grabText if line.strip()]
-    print("Starting Thread")
-    thread = threading.Thread(target=startPlaying, args=(grabText,))
-    thread.start()
-
-def infBox():
-    global isInf
-    isInf = not isInf
-def hotkeyClick():
-    global playing
-    if playing:
-        playing = False
-    else:
-        StartClicked()
-def startPlaying(inText):
-    global playing
-    global timeBetweenLoops
-    global isInf
-    total_loops = int(loopCount_Input.get())
-    timeBetweenLoops = int(tbl_Input.get())
-    cLoops = 0
-    while playing and cLoops < total_loops:
-        for textIn in inText:
-            command = parseCommand(textIn)
-            execCommand(command=command)
-        time.sleep(float(float(timeBetweenLoops) / float(1000)))
-        if not isInf:
-            cLoops += 1
-    print("Killing Thread")
-    playing = False
-    startBtn.config(state="normal")
-    stopBtn.config(state="disabled")
-
-
-def StopClicking():
-    global playing
-    playing = False
-    startBtn.config(state="normal")
-    stopBtn.config(state="disabled")
-
-
-def execCommand(command):
-    typa = str(command[0]).lower()
-    x = int(command[1])
-    y = int(command[2])
-    tx, ty = mousekey.MouseKey().get_cursor_position()
-    isalrdhere = False
-    if tx == x:
-        if ty == y:
-            isalrdhere = True
-    delay = float(command[3] / 1000)
-    key = command[4]
-    if typa in leftClickTypeList:
-        if isalrdhere:
-            mousekey.left_click_xy(x=x, y=y, delay=delay)
+    def doMouseMove(self, x, y):
+        mousekey.natural_mouse_movement(x=int(x), y=int(y))
+    def doMouseClick(self, isRight, delay):
+        if isRight:
+            mousekey.MouseKey().right_mouse_down()
+            time.sleep(float(delay)/1000)
+            mousekey.MouseKey().right_mouse_up()
         else:
-            mousekey.left_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
-    elif typa in rightClickTypeList:
-        if isalrdhere:
-            mousekey.right_click_xy(x=x, y=y, delay=delay)
+            mousekey.MouseKey().left_mouse_down()
+            time.sleep(float(delay) / 1000)
+            mousekey.MouseKey().left_mouse_up()
+    def doKeyPress(self, key, holdDuration):
+        keyboard.press_and_release(str(key), True, False)
+        time.sleep(float(holdDuration)/1000)
+        keyboard.press_and_release(str(key), False, True)
+    def doDelay(self, delay):
+        time.sleep(float(delay)/1000)
+    def startMacro(self):
+        self.currentLoops = 0
+        if self.infiboxValue == 1:
+            self.maxLoops = 200
         else:
-            mousekey.right_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
-    elif typa in middleClickTypeList:
-        if isalrdhere:
-            mousekey.middle_click_xy(x=x, y=y, delay=delay)
+            getLoops = self.loopInput.get()
+            if not str(getLoops).isnumeric():
+                getLoops = 1
+            self.maxLoops = int(getLoops)
+        self.running = True
+        self.startMacroButton.configure(state="disabled")
+        self.stopMacroButton.configure(state="enabled")
+        thread = threading.Thread(target=self.playMacro)
+        thread.start()
+    def playMacro(self):
+        while self.running and self.currentLoops < self.maxLoops:
+            for i in self.actionList:
+                actionType, x, y, key, delay = None, None, None, None, None
+                for e in self.actionList[i]:
+                    if str(e).startswith("X="):
+                        x = str(e).removeprefix("X=")
+                    elif str(e).startswith("Y="):
+                        y = str(e).removeprefix("Y=")
+                    elif str(e).startswith("Type="):
+                        actionType = str(e).removeprefix("Type=")
+                    elif str(e).startswith("Key="):
+                        key = str(e).removeprefix("Key=")
+                    elif str(e).startswith("Delay="):
+                        delay = str(e).removeprefix("Delay=")
+                if actionType == "Left Click":
+                    if x == "None":
+                        x = int(pyautogui.position().x)
+                    if y == "None":
+                        y = int(pyautogui.position().y)
+                    shouldMove = False
+                    if int(x) > pyautogui.position().x + 1 or int(x) < pyautogui.position().x - 1:
+                        shouldMove = True
+                    if int(y) > pyautogui.position().y + 1 or int(y) < pyautogui.position().y - 1:
+                        shouldMove = True
+                    if shouldMove:
+                        self.doMouseMove(int(x), int(y))
+                    self.doMouseClick(False, delay)
+                if actionType == "Right Click":
+                    if x == "None":
+                        x = pyautogui.position().x
+                    if y == "None":
+                        y = pyautogui.position().y
+                    shouldMove = False
+                    if int(x) > pyautogui.position().x+1 or int(x) < pyautogui.position().x-1:
+                        shouldMove = True
+                    if int(y) > pyautogui.position().y + 1 or int(y) < pyautogui.position().y - 1:
+                        shouldMove = True
+                    if shouldMove:
+                        self.doMouseMove(int(x), int(y))
+                    self.doMouseClick(True, delay)
+                if actionType == "Key Press":
+                    self.doKeyPress(key, delay)
+                if actionType == "Delay":
+                    self.doDelay(delay)
+            if self.infiboxValue == 0:
+                self.currentLoops += 1
+        self.running = False
+        self.startMacroButton.configure(state="enabled")
+        self.stopMacroButton.configure(state="disabled")
+    def removeActions(self):
+        for i in self.scrollable_frame.winfo_children():
+            i.destroy()
+            self.removeActionsButton.configure(state="normal")
+            self.addActionButton.configure(state="normal")
+            self.actionList = {}
+    def stopRun(self):
+        self.running = False
+    def addAction(self):
+        self.addActionButton.configure(state="disabled")
+        self.removeActionsButton.configure(state="disabled")
+        def removeThisAction():
+            localFrame.destroy()
+            self.addActionButton.configure(state="normal")
+            self.removeActionsButton.configure(state="normal")
+        def validateAction():
+            a_type, x, y, key, delay = "Delay", "None", "None", "None", 500
+            if len(localType.get()) >= 1:
+                a_type = localType.get()
+            if len(localXPosInput.get()) >= 1:
+                x = localXPosInput.get()
+            if len(localYPosInput.get()) >= 1:
+                y = localYPosInput.get()
+            if len(localKeyInput.get()) >= 1:
+                key = localKeyInput.get()
+            if len(localDelayInput.get()) >= 1:
+                delay = localDelayInput.get()
+            localCommand = {f"Type={a_type}", f"X={x}", f"Y={y}", f"Key={key}", f"Delay={delay}",
+                            f"index:{len(self.actionList)}"}
+            localValidateButton.destroy()
+            self.actionList[len(self.actionList)] = localCommand
+            self.addActionButton.configure(state="normal")
+            self.removeActionsButton.configure(state="normal")
+            localRemoveButton.destroy()
+            localType.configure(state="disabled")
+            localXPosInput.configure(state="disabled")
+            localYPosInput.configure(state="disabled")
+            localKeyInput.configure(state="disabled")
+            localDelayInput.configure(state="disabled")
+
+
+        localIndex = len(self.scrollable_frame.children)
+
+        localFrame = tk.Frame(self.scrollable_frame)
+        localType = ttk.Combobox(localFrame, values=("Left Click", "Right Click", "Key Press", "Delay"), width=10)
+        localType.grid(row=0, column=0, padx=3)
+
+        localXPosLabel = tk.Label(localFrame, text="x:", width=1)
+        localXPosLabel.grid(row=0, column=1)
+        localXPosInput = tk.Entry(localFrame, width=4)
+        localXPosInput.grid(row=0, column=2)
+
+        localYPosLabel = tk.Label(localFrame, text="y:", width=1)
+        localYPosLabel.grid(row=0, column=3)
+        localYPosInput = tk.Entry(localFrame, width=4)
+        localYPosInput.grid(row=0, column=4)
+
+        localKeyLabel = tk.Label(localFrame, text="key:", width=3)
+        localKeyLabel.grid(row=0, column=5)
+        localKeyInput = tk.Entry(localFrame, width=2)
+        localKeyInput.grid(row=0, column=6)
+
+        localDelayLabel = tk.Label(localFrame, text="delay:", width=5)
+        localDelayLabel.grid(row=0, column=7)
+        localDelayInput = tk.Entry(localFrame, width=6)
+        localDelayInput.grid(row=0, column=8)
+
+
+        localValidateButton = tk.Button(localFrame, text="✔", bg="light green", width=2, height=1,
+                                        command=validateAction)
+        localValidateButton.grid(row=0, column=9, padx=10)
+        localRemoveButton = tk.Button(localFrame, text="X", bg="red", width=2, height=1, command=removeThisAction)
+        localRemoveButton.grid(row=0, column=10, padx=0)
+        localFrame.pack(fill="x", pady=5)
+    def hotkeyPress(self):
+        if self.running == True:
+            self.running = False
         else:
-            mousekey.middle_click_xy_natural(x=x, y=y, print_coords=False, delay=delay)
-    elif str(typa) in delayTypeList:
-        time.sleep(delay)
-    elif str(typa) in keyTypeList:
-        mousekey.MouseKey().press_key(keycode=key, delay=delay)
+            self.startMacro()
+    def Start(self):
+        self.top_button_frame = ttk.Frame(self.root)
+        self.top_button_frame.pack(side="top", fill="x")
 
-def nameChange():
-    while True:
-        x, y = mousekey.MouseKey().get_cursor_position()
-        titleString = "x:" + str(x) + " y:" + str(y)
-        root.title(titleString)
-        time.sleep(float(1/FPS))
+        # Add buttons to the button frame
+        self.addActionButton = ttk.Button(self.top_button_frame, text="Add Action", command=self.addAction)
+        self.addActionButton.pack(side="left", padx=5, pady=5)
+        self.removeActionsButton = ttk.Button(self.top_button_frame, text="Remove All Actions",
+                                              command=self.removeActions)
+        self.removeActionsButton.pack(side="left", padx=5, pady=5)
 
-def parseCommand(command):
-    commandType = None
-    duration = 5  # 5ms Default
-    key = None
-    locationX, locationY = mousekey.MouseKey().get_cursor_position()
-    for part in command.rsplit(" "):
-        if commandType is None:
-            if part.lower() in leftClickTypeList:
-                commandType = part.lower()
-            if part.lower() in delayTypeList:
-                commandType = part.lower()
-            if part.lower() in keyTypeList:
-                commandType = part.lower()
-        if str(part).rfind("x=", 0, 2) == 0:
-            locationX = str(part).removeprefix("x=")
-        if str(part).rfind("y=", 0, 2) == 0:
-            locationY = str(part).removeprefix("y=")
-        if str(part).rfind("duration=", 0, 9) == 0:
-            duration = str(part).removeprefix("duration=")
-        if str(part).rfind("delay=", 0, 6) == 0:
-            duration = str(part).removeprefix("delay=")
-        if str(part).rfind("key=", 0, 4) == 0:
-            key = str(part).removeprefix("key=")
-    if commandType is None:
-        if str(command).lower() in leftClickTypeList:
-            commandType = str(command).lower()
-    return [str(commandType), int(locationX), int(locationY), float(duration), str(key)]
+        self.canvas_frame = ttk.Frame(self.root)
+        self.canvas_frame.pack(side="top", fill="both", expand=True)
 
+        # Create a canvas and a vertical scrollbar
+        self.canvas = tk.Canvas(self.canvas_frame)
+        self.scrollbar = tk.Scrollbar(self.canvas_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = ttk.Frame(self.canvas)
 
-root = tk.Tk()
-root.title("WR >> M")
-root.geometry("285x275+15+15")
-root.attributes("-topmost", True)
-root.attributes("-toolwindow", True)
+        self.canvas.bind_all("<MouseWheel>", lambda e: self.canvas.yview_scroll(int(-1 * (e.delta / 120)),
+                                                                                "units"))
 
-macroField = tk.Text(root, width=35, height=8, wrap="none")
-macroField.grid(column=1, columnspan=2, row=0, pady=5)
+        # Configure the canvas
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+        self.canvas.configure(scrollregion=(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height()))
 
-tbl_Label = tk.Label(root, text="Time Between Loops (ms)", height=1)
-tbl_Label.grid(column=1, row=1, pady=5)
-tbl_Input = tk.Entry(root, width=10)
-tbl_Input.grid(column=2, row=1, pady=5)
-tbl_Input.insert(0, "1")
+        # Create a window in the canvas
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-loopCount_Label = tk.Label(root, text="Loop Count")
-loopCount_Label.grid(column=1, row=2, pady=5)
-loopCount_Input = tk.Entry(root, width=10)
-loopCount_Input.grid(column=2, row=2, pady=5)
-loopCount_Input.insert(0, "1")
-loop_InfBox = tk.Checkbutton(root, text="Infinite Loop", command=infBox)
-loop_InfBox.grid(column=2, row=3, pady=5)
+        # Pack the canvas and scrollbar into the canvas frame
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
 
-startBtn = tk.Button(root, text="Start (F6)", width=7, height=1, command=StartClicked)
-startBtn.grid(column=1, row=4, pady=5)
-stopBtn = tk.Button(root, text="Stop (F6)", width=7, height=1, state="disabled", command=StopClicking)
-stopBtn.grid(column=2, row=4, pady=5)
+        def infiBox():
+            if self.infiboxValue == 0:
+                self.infiboxValue = 1
+            else:
+                self.infiboxValue = 0
+        self.downFrame = tk.Frame(self.root)
+        self.downFrame.pack(side="bottom", fill="x")
+        self.loopLabel = tk.Label(self.downFrame, text="Loops:", width=5)
+        self.loopLabel.pack(side="left", pady=10, padx=5)
+        self.loopInput = tk.Entry(self.downFrame, width=7)
+        self.loopInput.insert(1, "1")
+        self.loopInput.pack(side="left", padx=5, pady=10)
+        self.infiniteBox = tk.Checkbutton(self.downFrame, width=12, text="infinite Loops", command=infiBox)
+        self.infiniteBox.pack(side="left", padx=20, pady=10)
 
-label_LoopTime = tk.Label(root, text="Loop Delay:")
-label_LoopCount = tk.Label(root, text="Loops:")
+        # Create a frame for the buttons
+        self.down_button_frame = ttk.Frame(self.root)
+        self.down_button_frame.pack(side="bottom", fill="x")
 
-keyboard.add_hotkey("F6", hotkeyClick, suppress=True)
+        # Add buttons to the button frame
+        self.saveMacroButton = ttk.Button(self.down_button_frame, text="Save Macro")
+        self.saveMacroButton.pack(side="left", padx=5, pady=5)
+        self.stopMacroButton = ttk.Button(self.down_button_frame, text="Stop (F6)", state="disabled")
+        self.stopMacroButton.pack(side="right", padx=5, pady=5)
+        self.startMacroButton = ttk.Button(self.down_button_frame, text="Play (F6)", command=self.startMacro)
+        self.startMacroButton.pack(side="right", padx=5, pady=5)
 
-thready = threading.Thread(target=nameChange)
-thready.start()
+    def titleUpdater(self):
+        FPS = 0.01
+        while True:
+            self.root.title(f"X:{int(pyautogui.position().x)} Y:{int(pyautogui.position().y)}")
+            time.sleep(FPS)
 
-root.mainloop()
+    def __init__(self):
+        self.actionList = {}
+        self.running = False
+        self.infiboxValue = 0
+        self.currentLoops = 0
+        self.maxLoops = 1
+        keyboard.add_hotkey("F6", self.hotkeyPress, suppress=True)
+        self.root = tk.Tk()
+        self.root.title("---")
+        self.root.geometry("420x380+15+15")
+        self.root.attributes("-topmost", True)
+        self.root.attributes("-toolwindow", True)
+        self.root.after(500, self.Start)
+        thready = threading.Thread(target=self.titleUpdater)
+        thready.start()
+        self.root.mainloop()
+
+Normal()
