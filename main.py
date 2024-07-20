@@ -73,6 +73,8 @@ class Normal:
                     elif str(e).startswith("Repeat="):
                         repeat = str(e).removeprefix("Repeat=")
                 while int(repeat) >= int(currentLoop):
+                    if not self.running:
+                        break
                     if actionType == "Left Click":
                         if x == "None":
                             x = int(pyautogui.position().x)
